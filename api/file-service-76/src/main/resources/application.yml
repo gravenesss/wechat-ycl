@@ -1,0 +1,37 @@
+server:
+  port: 76
+  tomcat:
+    uri-encoding: UTF-8
+    max-swallow-size: -1  # 不限制请求体/文件的大小
+
+spring:
+  application:
+    name: file-service
+  servlet:
+    multipart:
+      max-file-size: 500KB #文件上传大小限制
+      max-request-size: 500KB #文件最大请求限制
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848
+        username: nacos
+        password: nacos
+#  rabbitmq:
+#    host: 127.0.0.1
+#    port: 5682
+#    username: imooc
+#    password: imooc
+#    virtual-host: wechat-dev
+
+# 日志级别
+logging:
+  level:
+    root: info
+
+minio:
+  endpoint: http://127.0.0.1:8000     # MinIO服务地址
+  fileHost: http://127.0.0.1:8000     # 文件地址host
+  bucketName: wechat                  # 存储桶bucket名称
+  accessKey: ycl                      # 用户名
+  secretKey: ycl0823A                 # 密码
