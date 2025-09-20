@@ -1,0 +1,59 @@
+server:
+  port: 1000
+  tomcat:
+    uri-encoding: UTF-8
+    max-swallow-size: -1  # 不限制请求体/文件的大小
+
+# 日志级别
+logging:
+  level:
+    root: info
+    org.springframework.cloud.gateway: debug
+    com.dhu.ycl.filter: debug  # 增加此行，确保过滤器的日志能够输出
+#    org.springframework.cloud.loadbalancer: DEBUG
+
+spring:
+  application:
+    name: gateway
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      database: 0   # 第0号db
+      password: ycl0823
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848
+        username: nacos
+        password: nacos
+    gateway:
+      discovery:
+        locator:
+          enabled: true        # 动态路由，从注册中心根据微服务的名称获得目标节点的地址
+      routes: # 配置路由规则（数组/list）
+        - id: authRoute        # 每一项路由规则都有一个唯一的id编号，可以自定义
+          uri: lb://auth-service    # lb=负载均衡，会动态寻址
+          predicates: # predicates是路由规则的条件判断部分，用于决定哪些请求应该匹配当前的路由规则
+            - Path=/a/**,/userAuth/**
+        - id: fileRoute
+          uri: lb://file-service
+          predicates:
+            - Path=/f/**,/file/**,/static/**,/speech/**
+        - id: mainRoute
+          uri: lb://main-service
+          predicates:
+            - Path=/m/**,/userinfo/**,/friendRequest/**,/friendship/**,/friendCircle/**,/comment/**,/chat/**
+      globalcors: # 全局CORS配置：解决跨域问题
+        cors-configurations: #
+          '[/**]': # 匹配所有路径
+            allowedOriginPatterns: "*"# 允许所有来源
+            allowedHeaders: "*"       # 允许所有请求头
+            allowedMethods: "*"       # 允许所有HTTP方法
+            allowCredentials: true    # 允许携带凭证
+
+
+#blackIp:
+#  continueCounts: 5 #ip连续请求的次数
+#  timeInterval: 15 #ip判断的时间间隔，单位：秒
+#  limitTimes: 25 #黑名单ip限制的时间，单位：秒
