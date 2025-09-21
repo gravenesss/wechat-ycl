@@ -94,13 +94,12 @@ public class UserController extends BaseInfoProperties {
     }
 
 
-    // 搜索好友：TODO：找到好友可以包括自己吧
+    // 搜索好友后展示：根据微信号或手机号查询
     @PostMapping("/queryFriend")
     public GraceJSONResult queryFriend(String queryString, HttpServletRequest request) {
         if (StringUtils.isBlank(queryString)) {
             return GraceJSONResult.error();
         }
-
         Users friend = userService.getByWechatNumOrMobile(queryString);
         if (friend == null) {
             return GraceJSONResult.errorCustom(ResponseStatusEnum.FRIEND_NOT_EXIST_ERROR);

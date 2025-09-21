@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dhu.ycl.mapper.FriendRequestMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.dhu.ycl.pojo.FriendRequest">
+        <id column="id" property="id"/>
+        <result column="my_id" property="myId"/>
+        <result column="friend_id" property="friendId"/>
+        <result column="friend_remark" property="friendRemark"/>
+        <result column="verify_message" property="verifyMessage"/>
+        <result column="verify_status" property="verifyStatus"/>
+        <result column="request_time" property="requestTime"/>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, my_id, friend_id, friend_remark, verify_message, verify_status, request_time
+    </sql>
+
+    <!-- mybatis-plus会自动加上分页 -->
+    <select id="queryNewFriendList" parameterType="map" resultType="com.dhu.ycl.pojo.vo.NewFriendsVO">
+        select fr.id as friendRequestId,
+        fr.verify_message as verifyMessage,
+        fr.verify_status as verifyStatus,
+        fr.request_time as requestTime,
+        u.id as myFriendId,
+        u.face as myFriendFace,
+        u.nickname as myFriendNickname
+        <!-- A-my请求加B-fr：现在要看自己有哪些请求，实际上我是B；且对应的朋友是A-my然后去找它的头像昵称 -->
+        from friend_request fr left join users u on fr.my_id = u.id
+        where fr.friend_id = #{paramMap.mySelfId}
+        order by fr.request_time desc
+    </select>
+</mapper>
