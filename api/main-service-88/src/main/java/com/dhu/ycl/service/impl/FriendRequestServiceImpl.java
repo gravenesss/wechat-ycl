@@ -1,4 +1,4 @@
-package com.dhu.ycl.service;
+package com.dhu.ycl.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -11,6 +11,7 @@ import com.dhu.ycl.pojo.FriendRequest;
 import com.dhu.ycl.pojo.Friendship;
 import com.dhu.ycl.pojo.bo.NewFriendRequestBO;
 import com.dhu.ycl.pojo.vo.NewFriendsVO;
+import com.dhu.ycl.service.FriendRequestService;
 import com.dhu.ycl.utils.PagedGridResult;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;

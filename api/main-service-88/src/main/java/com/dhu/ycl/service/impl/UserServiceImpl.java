@@ -1,4 +1,4 @@
-package com.dhu.ycl.service;
+package com.dhu.ycl.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.dhu.ycl.base.BaseInfoProperties;
@@ -8,6 +8,7 @@ import com.dhu.ycl.grace.result.ResponseStatusEnum;
 import com.dhu.ycl.mapper.UserMapper;
 import com.dhu.ycl.pojo.Users;
 import com.dhu.ycl.pojo.bo.ModifyUserBO;
+import com.dhu.ycl.service.UserService;
 import jakarta.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
