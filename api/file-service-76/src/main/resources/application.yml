@@ -9,8 +9,8 @@ spring:
     name: file-service
   servlet:
     multipart:
-      max-file-size: 500KB #文件上传大小限制
-      max-request-size: 500KB #文件最大请求限制
+      max-file-size: 100MB #文件上传大小限制
+      max-request-size: 1000MB #文件最大请求限制
   cloud:
     nacos:
       discovery:
