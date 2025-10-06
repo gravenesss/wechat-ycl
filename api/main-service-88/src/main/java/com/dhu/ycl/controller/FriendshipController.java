@@ -86,7 +86,7 @@ public class FriendshipController extends BaseInfoProperties {
         return GraceJSONResult.ok();
     }
 
-    // 前端未使用：判断两个朋友之前的关系是否拉黑
+    // 前端未使用：判断两个朋友之前的关系是否拉黑。com.dhu.ycl.websocket.ChatHandler中使用。
     @GetMapping("/isBlack")
     public GraceJSONResult isBlack(String friendId1st, String friendId2nd) {
         // 需要进行两次查询，A拉黑B，B拉黑A，AB相互拉黑。只需要符合其中的一个条件，就表示双发发送消息不可送达
