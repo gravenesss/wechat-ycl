@@ -1,5 +1,6 @@
 package com.dhu.ycl;
 
+import com.dhu.ycl.mq.MessagePublisher;
 import com.dhu.ycl.utils.JedisPoolUtils;
 import com.dhu.ycl.websocket.WSServerInitializer;
 import io.netty.bootstrap.ServerBootstrap;
@@ -27,11 +28,12 @@ public class ChatServer {
         // 定义主从线程组：主线程组用于接受客户端的连接，但是不做任何处理。从属线程组处理主线程池交过来的任务。
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
-        Integer nettyPort = selectPort(NETTY_DEFAULT_PORT);
+        // 此时先使用固定的端口，com.dhu.ycl.controller.ChatController.getNettyOnlineInfo 才能匹配
+        Integer nettyPort = 875; // selectPort(NETTY_DEFAULT_PORT);
 
         // 注册当前netty服务到zookeeper中
         // ZookeeperRegister.registerNettyServer("server-list", ZookeeperRegister.getLocalIp(), nettyPort); // TODO zk
-        // MessagePublisher.listen(nettyPort);  // 启动消费者进行监听，队列可以根据动态生成的端口号进行拼接  TODO mq
+        MessagePublisher.listen(nettyPort);  // 启动消费者进行监听，队列可以根据动态生成的端口号进行拼接
 
         try {
             // 构建Netty服务器，设置线程组+通道+处理器

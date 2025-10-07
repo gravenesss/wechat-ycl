@@ -40,12 +40,12 @@ spring:
       port: 6379
       database: 0
       password: ycl0823
-#  rabbitmq:
-#    host: 127.0.0.1
-#    port: 5682
-#    username: imooc
-#    password: imooc
-#    virtual-host: wechat-dev
+  rabbitmq:
+    host: 127.0.0.1
+    port: 5672
+    username: admin
+    password: ycl0823
+    virtual-host: wechat-ycl
 
 #zookeeper:
 #  curator:

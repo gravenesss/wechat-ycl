@@ -20,7 +20,8 @@
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-all</artifactId>
-            <version>4.1.25.Final</version>
+            <!--解决 java.lang.UnsupportedOperationException: Reflective setAccessible(true) disabled -->
+            <version>4.1.77.Final</version>
         </dependency>
 
         <dependency>

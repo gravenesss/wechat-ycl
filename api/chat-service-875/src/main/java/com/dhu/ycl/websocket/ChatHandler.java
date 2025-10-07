@@ -5,6 +5,7 @@ import com.a3test.component.idworker.IdWorkerConfigBean;
 import com.a3test.component.idworker.Snowflake;
 import com.dhu.ycl.enums.MsgTypeEnum;
 import com.dhu.ycl.grace.result.GraceJSONResult;
+import com.dhu.ycl.mq.MessagePublisher;
 import com.dhu.ycl.pojo.netty.ChatMsg;
 import com.dhu.ycl.pojo.netty.DataContent;
 import com.dhu.ycl.pojo.netty.NettyServerNode;
@@ -33,7 +34,16 @@ public class ChatHandler extends SimpleChannelInboundHandler<TextWebSocketFrame>
     public static ChannelGroup clients = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
     public static final String IS_BLACK_URK = "http://127.0.0.1:1000/friendship/isBlack";
 
-    // 当客户端通过WebSocket连接向服务器发送文本消息时触发(发送消息)，当消息是 TextWebSocketFrame 类型时才会触发
+    // 1、客户端连接到服务端之后(打开链接)
+    @Override
+    public void handlerAdded(ChannelHandlerContext ctx) {
+        Channel currentChannel = ctx.channel();
+        String currentChannelId = currentChannel.id().asLongText();
+        log.info("客户端建立连接，channel对应的短id为：{}", currentChannelId);
+        clients.add(currentChannel);  // 获得客户端的channel，并且存入到ChannelGroup中进行管理(作为一个客户端群组)
+    }
+
+    // 2、当客户端通过WebSocket连接向服务器发送文本消息时触发(发送消息)，当消息是 TextWebSocketFrame 类型时才会触发
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, TextWebSocketFrame msg) throws Exception {
         // 1、获取客户端发来的消息并且解析
@@ -83,20 +93,11 @@ public class ChatHandler extends SimpleChannelInboundHandler<TextWebSocketFrame>
             dataContent.setChatMsg(chatMsg);
             String chatTimeFormat = LocalDateUtils.format(chatMsg.getChatTime(), LocalDateUtils.DATETIME_PATTERN_2);
             dataContent.setChatTime(chatTimeFormat);
-            // 先把聊天信息发送给其他netty服务器，再把聊天信息发送给mq  TODO：mq 异步解耦
-            // MessagePublisher.sendMsgToOtherNettyServer(JsonUtils.objectToJson(dataContent));
-            // MessagePublisher.sendMsgToSave(chatMsg);
+            // 先把聊天信息发送给其他netty服务器，再把聊天信息发送给mq
+            MessagePublisher.sendMsgToOtherNettyServer(JsonUtils.objectToJson(dataContent));
+            MessagePublisher.sendMsgToSave(chatMsg);
         }
         UserChannelSession.printLogMulti();
-    }
-
-    // 客户端连接到服务端之后(打开链接)
-    @Override
-    public void handlerAdded(ChannelHandlerContext ctx) {
-        Channel currentChannel = ctx.channel();
-        String currentChannelId = currentChannel.id().asLongText();
-        log.info("客户端建立连接，channel对应的短id为：{}", currentChannelId);
-        clients.add(currentChannel);  // 获得客户端的channel，并且存入到ChannelGroup中进行管理(作为一个客户端群组)
     }
 
     // 关闭连接触发时：移除channel
@@ -120,7 +121,7 @@ public class ChatHandler extends SimpleChannelInboundHandler<TextWebSocketFrame>
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         Channel currentChannel = ctx.channel();
         String currentChannelId = currentChannel.id().asLongText();
-        log.error("发生异常捕获，channel对应长id为：{}", currentChannelId);
+        log.error("发生异常捕获，channel对应长id为：{}, 异常信息为：{}", currentChannelId, cause.getMessage());
         // 发生异常之后关闭连接(channel),随后从ChannelGroup中移除对应的channel; 并移除多余的会话
         ctx.channel().close();
         clients.remove(currentChannel);
