@@ -27,6 +27,10 @@ spring:
         server-addr: 127.0.0.1:8848
         username: nacos
         password: nacos
+        # 显式配置gRPC端口
+        metadata:
+          nacos.instance.grpc.port: 9848
+          nacos.instance.grpc.enable: true
     gateway:
       discovery:
         locator:

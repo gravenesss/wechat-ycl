@@ -21,6 +21,10 @@ public class UserChannelSession {
 
     // 添加 userId 和 channelId 的1对n的关联关系
     public static void putMultiChannels(String userId, Channel channel) {
+        if (channel == null) { // 添加null检查
+            log.warn("尝试添加null Channel到会话管理，userId: {}", userId);
+            return;
+        }
         List<Channel> channels = getMultiChannels(userId);
         if (CollectionUtils.isEmpty(channels)) {
             channels = new ArrayList<>();
@@ -65,7 +69,11 @@ public class UserChannelSession {
         for (Map.Entry<String, List<Channel>> entry : multiSession.entrySet()) {
             log.debug("UserId: {}", entry.getKey());
             for (Channel c : entry.getValue()) {
-                log.debug("\t\t ChannelId: {}", c.id().asLongText());
+                if (c != null) { // 添加null检查
+                    log.debug("\t\t ChannelId: {}", c.id().asLongText());
+                } else {
+                    log.debug("\t\t ChannelId: null (Channel对象已失效)");
+                }
             }
             log.debug("----------*----------");
         }

@@ -10,6 +10,7 @@ import com.dhu.ycl.pojo.netty.ChatMsg;
 import com.dhu.ycl.pojo.netty.DataContent;
 import com.dhu.ycl.pojo.netty.NettyServerNode;
 import com.dhu.ycl.utils.*;
+import com.dhu.ycl.zk.ZookeeperRegister;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -58,10 +59,12 @@ public class ChatHandler extends SimpleChannelInboundHandler<TextWebSocketFrame>
         String receiverId = chatMsg.getReceiverId();
         String senderId = chatMsg.getSenderId();
         GraceJSONResult isBlackResult = OkHttpUtil.get(IS_BLACK_URK + "?friendId1st=" + receiverId + "&friendId2nd=" + senderId);
-        boolean isBlank = (Boolean) isBlackResult.getData();
-        if (isBlank) {
-            log.debug("用户 {} 被 {} 加入了黑名单", receiverId, senderId);
-            return;
+        if (isBlackResult != null && isBlackResult.getData() != null) {
+            boolean isBlank = (Boolean) isBlackResult.getData();
+            if (isBlank) {
+                log.debug("用户 {} 被 {} 加入了黑名单", receiverId, senderId);
+                return;
+            }
         }
         chatMsg.setChatTime(LocalDateTime.now());  // 时间校准，以服务器的时间为准
 
@@ -75,10 +78,11 @@ public class ChatHandler extends SimpleChannelInboundHandler<TextWebSocketFrame>
             UserChannelSession.putUserChannelIdRelation(currentChannelId, senderId);
             NettyServerNode minNode = dataContent.getServerNode();
             // 初次连接后，该节点下的在线人数累加
-            // ZookeeperRegister.incrementOnlineCounts(minNode); // TODO zk
-            // 获得ip+端口，在redis中设置关系，以便在前端设备断线后减少在线人数
-            Jedis jedis = JedisPoolUtils.getJedis();
-            jedis.set(senderId, JsonUtils.objectToJson(minNode));
+            ZookeeperRegister.incrementOnlineCounts(minNode);
+            // redis中设置关系：senderId -- ip+port+counts，以便在前端设备断线后减少在线人数
+            try (Jedis jedis = JedisPoolUtils.getJedis()) {
+                jedis.set(senderId, JsonUtils.objectToJson(minNode));
+            }
         } else if (msgType == MsgTypeEnum.WORDS.type || msgType == MsgTypeEnum.IMAGE.type
                 || msgType == MsgTypeEnum.VIDEO.type || msgType == MsgTypeEnum.VOICE.type
         ) {
@@ -102,7 +106,7 @@ public class ChatHandler extends SimpleChannelInboundHandler<TextWebSocketFrame>
 
     // 关闭连接触发时：移除channel
     @Override
-    public void handlerRemoved(ChannelHandlerContext ctx) {
+    public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
         Channel currentChannel = ctx.channel();
         String currentChannelId = currentChannel.id().asLongText();
         log.info("客户端关闭连接，channel对应的短id为：{}", currentChannelId);
@@ -111,14 +115,15 @@ public class ChatHandler extends SimpleChannelInboundHandler<TextWebSocketFrame>
         UserChannelSession.removeUselessChannels(userId, currentChannelId);
         clients.remove(currentChannel);
         // zk中在线人数累减
-        // Jedis jedis = JedisPoolUtils.getJedis();
-        // NettyServerNode minNode = JsonUtils.jsonToPojo(jedis.get(userId), NettyServerNode.class);
-        // ZookeeperRegister.decrementOnlineCounts(minNode);  // TODO zk
+        try (Jedis jedis = JedisPoolUtils.getJedis()) {
+            NettyServerNode minNode = JsonUtils.jsonToPojo(jedis.get(userId), NettyServerNode.class);
+            ZookeeperRegister.decrementOnlineCounts(minNode);
+        }
     }
 
     // 捕获异常：移除channel
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         Channel currentChannel = ctx.channel();
         String currentChannelId = currentChannel.id().asLongText();
         log.error("发生异常捕获，channel对应长id为：{}, 异常信息为：{}", currentChannelId, cause.getMessage());
@@ -128,8 +133,9 @@ public class ChatHandler extends SimpleChannelInboundHandler<TextWebSocketFrame>
         String userId = UserChannelSession.getUserIdByChannelId(currentChannelId);
         UserChannelSession.removeUselessChannels(userId, currentChannelId);
         // zk中在线人数累减
-        // Jedis jedis = JedisPoolUtils.getJedis();
-        // NettyServerNode minNode = JsonUtils.jsonToPojo(jedis.get(userId), NettyServerNode.class);
-        // ZookeeperRegister.decrementOnlineCounts(minNode);  // TODO zk
+        try (Jedis jedis = JedisPoolUtils.getJedis()) {
+            NettyServerNode minNode = JsonUtils.jsonToPojo(jedis.get(userId), NettyServerNode.class);
+            ZookeeperRegister.decrementOnlineCounts(minNode);
+        }
     }
 }

@@ -12,13 +12,13 @@ public class JedisPoolUtils {
         // 配置连接池
         JedisPoolConfig poolConfig = new JedisPoolConfig();
         // 最大连接数
-        poolConfig.setMaxTotal(10);
+        poolConfig.setMaxTotal(30);
         // 最大空闲连接
         poolConfig.setMaxIdle(10);
         // 最小空闲连接
         poolConfig.setMinIdle(5);
         // 最长等待时间,ms
-        poolConfig.setMaxWaitMillis(1500);
+        poolConfig.setMaxWaitMillis(20000);
         // 创建连接池对象
         jedisPool = new JedisPool(poolConfig, "127.0.0.1", 6379, 1000, "ycl0823");
     }

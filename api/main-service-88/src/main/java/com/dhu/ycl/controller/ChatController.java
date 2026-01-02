@@ -4,19 +4,25 @@ import com.dhu.ycl.base.BaseInfoProperties;
 import com.dhu.ycl.grace.result.GraceJSONResult;
 import com.dhu.ycl.pojo.netty.NettyServerNode;
 import com.dhu.ycl.service.ChatMessageService;
+import com.dhu.ycl.utils.JsonUtils;
 import com.dhu.ycl.utils.PagedGridResult;
+import com.dhu.ycl.zk.CuratorConfig;
 import jakarta.annotation.Resource;
+import org.apache.curator.framework.CuratorFramework;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.net.UnknownHostException;
-import java.util.Map;
+import java.util.*;
 
 @RestController
 @RequestMapping("/chat")
 public class ChatController extends BaseInfoProperties {
+    private static final Logger log = LoggerFactory.getLogger(ChatController.class);
     @Resource
     private ChatMessageService chatMessageService;
 
@@ -49,12 +55,35 @@ public class ChatController extends BaseInfoProperties {
         return GraceJSONResult.ok();
     }
 
-    @PostMapping("/getNettyOnlineInfo")
-    public GraceJSONResult getNettyOnlineInfo() throws UnknownHostException {
+    @PostMapping("/getNettyOnlineInfo1")
+    public GraceJSONResult getNettyOnlineInfo1() throws UnknownHostException {
         NettyServerNode minNode = new NettyServerNode();
         minNode.setIp("127.0.0.1");
         minNode.setPort(875);
         minNode.setOnlineCounts(0);
         return GraceJSONResult.ok(minNode);
     }
+
+    @Resource(name = "curatorClient")
+    private CuratorFramework zkClient;
+
+    @RequestMapping("/getNettyOnlineInfo")
+    public GraceJSONResult getNettyOnlineInfo() throws Exception {
+        // 1、从zookeeper中获得当前已经注册的netty服务列表
+        String path = CuratorConfig.PATH;
+        List<String> registerList = zkClient.getChildren().forPath(path);
+        List<NettyServerNode> serverNodeList = new ArrayList<>();
+        for (String node : registerList) {
+            String nodeValue = new String(zkClient.getData().forPath(path + "/" + node));
+            NettyServerNode serverNode = JsonUtils.jsonToPojo(nodeValue, NettyServerNode.class);
+            serverNodeList.add(serverNode);
+        }
+        // 计算当前哪个zk的node是最少连接，获得[ip:port]并且返回给前端
+        Optional<NettyServerNode> minNodeOptional = serverNodeList.stream()
+                .min(Comparator.comparing(nettyServerNode -> nettyServerNode.getOnlineCounts()));
+        NettyServerNode minNode = minNodeOptional.get();
+        log.info("minNode: {}", JsonUtils.objectToJson(minNode));
+        return GraceJSONResult.ok(minNode);
+    }
+
 }

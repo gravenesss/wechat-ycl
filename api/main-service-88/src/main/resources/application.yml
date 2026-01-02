@@ -18,6 +18,10 @@ spring:
         server-addr: 127.0.0.1:8848
         username: nacos
         password: nacos
+        # 显式配置gRPC端口
+        metadata:
+          nacos.instance.grpc.port: 9848
+          nacos.instance.grpc.enable: true
 
   datasource: # 数据源的相关配置
     type: com.zaxxer.hikari.HikariDataSource    # 数据源的类型
@@ -47,15 +51,16 @@ spring:
     password: ycl0823
     virtual-host: wechat-ycl
 
-#zookeeper:
-#  curator:
-#    #    host: 192.168.1.121:2181,192.168.1.122:2181,192.168.1.123:2181
-#    host: 127.0.0.1:2181
-#    connectionTimeoutMs: 30000
-#    sessionTimeoutMs: 3000
-#    sleepMsBetweenRetry: 2000
-#    maxRetries: 3
-#    namespace: lishentan-im
+zookeeper:
+  curator:
+#    host: 192.168.1.121:3181,192.168.1.122:3181,192.168.1.123:3181
+    host: 127.0.0.1:3191
+    connectionTimeoutMs: 30000
+    sessionTimeoutMs: 30000
+    sleepMsBetweenRetry: 1000
+    maxRetries: 6
+    maxSleepMs: 10000
+    namespace: wechat-im
 
 
 mybatis-plus:
