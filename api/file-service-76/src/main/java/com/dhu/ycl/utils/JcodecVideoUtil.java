@@ -2,16 +2,14 @@ package com.dhu.ycl.utils;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
-import org.jcodec.api.FrameGrab;
-import org.jcodec.api.JCodecException;
-import org.jcodec.common.model.Picture;
-import org.jcodec.scale.AWTUtil;
+import org.bytedeco.javacv.FFmpegFrameGrabber;
+import org.bytedeco.javacv.Frame;
+import org.bytedeco.javacv.Java2DFrameConverter;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.IOException;
 import java.util.UUID;
 
 // 视频操作工具类
@@ -45,7 +43,7 @@ public class JcodecVideoUtil {
      * @param targetFile 截取帧的图片
      */
     public static void fetchFrame(MultipartFile videoFile, File targetFile) throws Exception {
-        File file = new File(videoFile.getName());
+        File file = new File(videoFile.getOriginalFilename());
         FileUtils.copyInputStreamToFile(videoFile.getInputStream(), file);
         getFirstFrame(file, targetFile);
     }
@@ -91,14 +89,29 @@ public class JcodecVideoUtil {
      * @param targetFile 缩略图目标路径
      */
     public static void getFirstFrame(File videoFile, File targetFile) {
-        try {
-            // 根据扩展名创建一个新文件路径
-            Picture picture = FrameGrab.getFrameFromFile(videoFile, THUMB_FRAME);
-            BufferedImage bufferedImage = AWTUtil.toBufferedImage(picture);
-            ImageIO.write(bufferedImage, FILE_EXT, targetFile);
-        } catch (IOException | JCodecException e) {
-            e.printStackTrace();
-            log.error("获取第一帧缩略图异常：", e);
+        // FFmpegFrameGrabber 兼容性极好
+        try (FFmpegFrameGrabber grabber = new FFmpegFrameGrabber(videoFile)) {
+            grabber.start();
+
+            Frame frame = null;
+            // 循环直到抓取到第一帧有效的视频帧（跳过可能的空头）
+            for (int i = 0; i < grabber.getLengthInFrames(); ++i){
+                frame = grabber.grabImage();
+                // 确保抓到的是图像帧而非音频帧
+                if (frame != null && frame.image != null) {
+                    break;
+                }
+            }
+            if (frame != null) {
+                Java2DFrameConverter converter = new Java2DFrameConverter();
+                BufferedImage bi = converter.getBufferedImage(frame);
+                ImageIO.write(bi, "jpg", targetFile);
+            }
+
+            grabber.stop();
+        } catch (Exception e) {
+            log.error("JavaCV 截帧失败: ", e);
         }
     }
+
 }

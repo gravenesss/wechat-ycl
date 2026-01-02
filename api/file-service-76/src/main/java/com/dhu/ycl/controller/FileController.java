@@ -100,7 +100,7 @@ public class FileController {
         return checkAndUploadFile(userId, file, "friendCircleImage", "image");
     }
 
-    @PostMapping("uploadChatPhoto")
+    @PostMapping("/uploadChatPhoto")
     public GraceJSONResult uploadChatPhoto(@RequestParam("file") MultipartFile file, String userId) {
         return checkAndUploadFile(userId, file, "chat", "image");
     }
@@ -110,7 +110,7 @@ public class FileController {
         return checkAndUploadFile(userId, file, "chat", "voice");
     }
 
-    @PostMapping("uploadChatVideo")
+    @PostMapping("/uploadChatVideo")
     public GraceJSONResult uploadChatVideo(@RequestParam("file") MultipartFile file, String userId) throws Exception {
         GraceJSONResult fileUrl = checkAndUploadFile(userId, file, "chat", "video");
         if (!fileUrl.getSuccess()) return fileUrl; // 上传失败
